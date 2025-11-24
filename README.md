@@ -36,7 +36,7 @@ After training the LLM model, generate explanations using the concepts selected 
 
 
 ```python
-python <explainer_step1_llm.py> <dataset>
+python generate_explanations/explainer_step1_llm.py <dataset>
 
 ```
 
