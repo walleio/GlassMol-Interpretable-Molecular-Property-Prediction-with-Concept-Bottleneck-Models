@@ -2,10 +2,6 @@ import os
 import torch
 import numpy as np 
 import torch.nn as nn
-from torch.nn import Parameter
-import torch.nn.functional as F
-import torch.utils.model_zoo as model_zoo
-from catboost import CatBoostClassifier
 
 # fully connected layer architecture
 class FC(torch.nn.Module):

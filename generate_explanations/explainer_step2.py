@@ -5,10 +5,9 @@ import sys
 
 model_type = sys.argv[1] # 'gnn' or 'llm'
 dataset = sys.argv[2] # whichever dataset you have trained and run step 1 on
+analyze_mol = int(sys.argv[3]) # index of the molecule in the test set to analyze
 
-analyze_mol = 42 # index of the molecule in the test set to analyze
-
-with open(f'explanations_dir/contributions_{model_type}_{dataset}.pkl', 'rb') as f:
+with open(f'model_output_dir/contributions_{model_type}_{dataset}.pkl', 'rb') as f:
     contributions = pkl.load(f)
 
 data = pd.read_csv(f'data/test_{dataset}.csv').iloc[analyze_mol]
@@ -30,7 +29,7 @@ contributions_3 = {}
 for k, v in contributions_2.items():
     contributions_3[k] = [i for i in v if data[i['name']].item() != 0]
 
-print(f'{data["Drug_ID"]}:')
+print(f'Molecule name: {data["Drug_ID"]}\n' +'='*len(f'Molecule name: {data["Drug_ID"]}'))
 for idx, i in enumerate(contributions_3[data['Drug_ID']]):
     print(f'{i["name"]}: {i["value"]:.4f}')
     print('-'*(len(str(f'{i["name"]}: {i["value"]:.4f}'))-0))

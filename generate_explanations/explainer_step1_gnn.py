@@ -13,17 +13,17 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset = sys.argv[1] # whichever dataset you have trained
 
 # load the model
-model = torch.load(f'explanations_dir/model_gnn_{dataset}.pth', weights_only=False).to(device)
-ModelXtoCtoY_layer = torch.load(f'explanations_dir/ModelXtoCtoY_layer_gnn_{dataset}.pth', weights_only=False).to(device)
+model = torch.load(f'model_output_dir/model_gnn_{dataset}.pth', weights_only=False).to(device)
+ModelXtoCtoY_layer = torch.load(f'model_output_dir/ModelXtoCtoY_layer_gnn_{dataset}.pth', weights_only=False).to(device)
 model.eval()
 ModelXtoCtoY_layer.eval()
 
 # load the saved test loader
-with open(f'explanations_dir/test_loader_gnn_{dataset}.pkl', 'rb') as f:
+with open(f'model_output_dir/test_loader_gnn_{dataset}.pkl', 'rb') as f:
            test_loader = pkl.load(f)
 
 # load the features
-with open(f'explanations_dir/features_gnn_{dataset}.pkl', 'rb') as f:
+with open(f'model_output_dir/features_gnn_{dataset}.pkl', 'rb') as f:
     features = pkl.load(f)
 
 # get the contributions for the entire test set
@@ -59,6 +59,5 @@ for batch in test_loader:
         except:
             contributions_dict[feature] = ((contributions.T)[i])       
 
-with open (f'explanations_dir/contributions_gnn_{dataset}.pkl', 'wb') as f:
+with open (f'model_output_dir/contributions_gnn_{dataset}.pkl', 'wb') as f:
     pkl.dump(contributions_dict, f)
-    print('\a')

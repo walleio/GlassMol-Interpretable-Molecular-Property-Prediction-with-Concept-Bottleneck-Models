@@ -22,6 +22,7 @@ set_seed(config['seed'])
 data_type = config['data_type']
 num_epochs = config['num_epochs']
 num_concepts = config['num_concepts']
+loss_weight = config['loss_weight']
 
 tokenizer = APETokenizer()
 tokenizer.load_vocabulary('apetokenizer/tokenizer.json')
@@ -37,7 +38,7 @@ DATA['test'] = pd.read_csv(f'data/test_{data_type}.csv')
 features = agent(data_type, DATA['train'].drop(columns=['Drug', 'Y', 'Drug_ID']).columns.tolist(), num_concepts)
 features = ast.literal_eval(features)
 
-with open(f'explanations_dir/features_llm_{data_type}.pkl', 'wb') as f:
+with open(f'model_output_dir/features_llm_{data_type}.pkl', 'wb') as f:
     pkl.dump(features, f)
 
 # means and std for standardization
@@ -50,7 +51,7 @@ val_loader = DataLoader(MyDataset('val', features, means, stds, tokenizer, DATA)
 test_loader = DataLoader(MyDataset('test', features, means, stds, tokenizer, DATA), batch_size=8, shuffle=False)
 
 # num_concepts is the number of concepts, expand_dim is the dimension of the expanded layer (0 means no expansion)
-ModelXtoCtoY_layer = ModelXtoCtoY_function(num_concepts=num_concepts, expand_dim=0, in_dims=in_dims).to(device)
+ModelXtoCtoY_layer = ModelXtoCtoY_function(num_concepts=num_concepts, expand_dim=0, in_dims=768).to(device)
 
 loss_C = torch.nn.L1Loss()
 loss_Y = torch.nn.BCEWithLogitsLoss()
@@ -86,7 +87,7 @@ for epoch in range(num_epochs):
         # XtoY_loss
         XtoY_loss = loss_Y(XtoY_output[0].squeeze().to(device), label.squeeze().to(device))
 
-        loss = XtoY_loss + XtoC_loss * float(sys.argv[8])
+        loss = XtoY_loss + XtoC_loss * loss_weight
         
         loss.backward()
         optimizer.step()
@@ -117,12 +118,12 @@ for epoch in range(num_epochs):
         
     if val_accuracy > best_acc_score:
         best_acc_score = val_accuracy
-        torch.save(model, f'explanations_dir/model_llm_{data_type}.pth')
-        torch.save(ModelXtoCtoY_layer, f'explanations_dir/ModelXtoCtoY_layer_llm_{data_type}.pth')
+        torch.save(model, f'model_output_dir/model_llm_{data_type}.pth')
+        torch.save(ModelXtoCtoY_layer, f'model_output_dir/ModelXtoCtoY_layer_llm_{data_type}.pth')
 
 ######### test #########
-model = torch.load(f'explanations_dir/model_llm_{data_type}.pth', weights_only=False)
-ModelXtoCtoY_layer = torch.load(f'explanations_dir/ModelXtoCtoY_layer_llm_{data_type}.pth', weights_only=False) 
+model = torch.load(f'model_output_dir/model_llm_{data_type}.pth', weights_only=False)
+ModelXtoCtoY_layer = torch.load(f'model_output_dir/ModelXtoCtoY_layer_llm_{data_type}.pth', weights_only=False) 
 model.eval()
 ModelXtoCtoY_layer.eval()
 
@@ -148,7 +149,7 @@ with torch.no_grad():
 
     test_accuracy = predict_labels.sum() / len(predict_labels)
 
-    with open(f'explanations_dir/test_loader_llm_{data_type}.pkl', 'wb') as f:
+    with open(f'model_output_dir/test_loader_llm_{data_type}.pkl', 'wb') as f:
         pkl.dump(test_loader, f)
     print(f'Test Acc = {test_accuracy*100}')
     print(f'Test roc_auc_score = {roc_auc_score(true_labels, predictions)}')

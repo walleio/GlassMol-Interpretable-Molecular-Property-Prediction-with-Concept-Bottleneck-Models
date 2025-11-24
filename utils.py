@@ -10,7 +10,6 @@ from torch_geometric.nn import GINEConv, GCNConv, SAGEConv, global_add_pool, glo
 from openai import OpenAI
 from pydantic import BaseModel
 import dotenv
-from topo_pool import TopoPool
 import pickle
 from transformers import BitsAndBytesConfig
 
@@ -71,16 +70,12 @@ def agent(task, properties, num_concepts):
     elif task == 'ames':
         task = 'Predict whether a molecule is an AMES mutagen.'
 
-    class agent_response(BaseModel):
-        selected_properties: list[str]
-
     response = client.responses.create(
-        model = 'gpt-5',
+        model = 'gpt-4o',
         instructions = 'You are a helpful chemistry assistant. You will be given a task and some properties to choose from. You will choose the properties most important for successfully completing/predicting the task.',
         input = f'Task: {task}\nProperties: {properties}. You should choose {num_concepts} properties and return them in a list formatted exactly as they are given to you. The list should be your ONLY output.',
     )
-    
-    return response.text
+    return response.output[0].content[0].text
 
 def llama_agent(task, properties, num_concepts):
     if task == 'dili':
@@ -125,7 +120,7 @@ def llama_agent(task, properties, num_concepts):
         task = 'Predict whether a molecule is an AMES mutagen.'
 
     bnb_cfg = BitsAndBytesConfig(load_in_8bit=True, bnb_8bit_compute_dtype=torch.bfloat16)
-    pipe = pipeline("text-generation", model="meta-llama/Meta-Llama-3-70B-Instruct", device='cuda', quantization_config=bnb_cfg, )
+    pipe = pipeline("text-generation", model="meta-llama/Meta-Llama-3-70B-Instruct", device='cuda', quantization_config=bnb_cfg)
     print('pipe loaded')
     messages = [
         {"role": "system", "content": "You are a helpful chemistry assistant. You will be given a task and some properties to choose from. You will choose the properties most important for successfully completing/predicting the task."},
@@ -154,7 +149,6 @@ class MyDataset(Dataset):
         tokenized_text = self.tokenizer(
             self.text[index], 
             max_length=64,
-            truncation=True,
             add_special_tokens=True,
             padding='max_length',
             return_tensors='pt',
@@ -194,7 +188,7 @@ class MolNet(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
-
         x = self.conv1(x.to(torch.float32), edge_index, edge_attr.to(torch.float32)).relu()
         x = self.conv2(x.to(torch.float32), edge_index, edge_attr.to(torch.float32)).relu()
-        return self.mlp(x)
+        x = global_add_pool(x, batch)
+        return x

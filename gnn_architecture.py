@@ -21,6 +21,7 @@ set_seed(config['seed'])
 data_type = config['data_type']
 num_epochs = config['num_epochs']
 num_concepts = config['num_concepts']
+loss_weight = config['loss_weight']
 
 # molecules are PyG objects, so we need to attach the y and concepts to the object
 def attach_y_and_concepts(row):
@@ -41,7 +42,7 @@ val_data = pd.read_csv(f"data/val_{data_type}.csv")
 features = agent(data_type, train_data.drop(columns=['Drug', 'Y', 'Drug_ID']).columns.tolist(), num_concepts)
 features = ast.literal_eval(features)
 
-with open(f'explanations_dir/features_gnn_{data_type}.pkl', 'wb') as f:
+with open(f'model_output_dir/features_gnn_{data_type}.pkl', 'wb') as f:
     pkl.dump(features, f)
 
 # turn the SMILES strings into PyG objects
@@ -85,7 +86,7 @@ for epoch in range(num_epochs):
         # XtoY_loss
         XtoY_loss = loss_Y(XtoY_output[0].squeeze(), data.y.squeeze())
         
-        loss = XtoY_loss + XtoC_loss * float(sys.argv[8])
+        loss = XtoY_loss + XtoC_loss * loss_weight
         loss.backward()
         optimizer.step()
 
@@ -113,13 +114,13 @@ for epoch in range(num_epochs):
         
     if val_accuracy > best_acc_score:
         best_acc_score = val_accuracy
-        torch.save(model, f'explanations_dir/model_gnn_{data_type}.pth')
-        torch.save(ModelXtoCtoY_layer, f'explanations_dir/ModelXtoCtoY_layer_gnn_{data_type}.pth')
+        torch.save(model, f'model_output_dir/model_gnn_{data_type}.pth')
+        torch.save(ModelXtoCtoY_layer, f'model_output_dir/ModelXtoCtoY_layer_gnn_{data_type}.pth')
 
 
 ######### test #########
-model = torch.load(f'explanations_dir/model_gnn_{data_type}.pth', weights_only=False)
-ModelXtoCtoY_layer = torch.load(f'explanations_dir/ModelXtoCtoY_layer_gnn_{data_type}.pth', weights_only=False)
+model = torch.load(f'model_output_dir/model_gnn_{data_type}.pth', weights_only=False)
+ModelXtoCtoY_layer = torch.load(f'model_output_dir/ModelXtoCtoY_layer_gnn_{data_type}.pth', weights_only=False)
 with torch.no_grad():
     model.eval()
     ModelXtoCtoY_layer.eval()
@@ -132,10 +133,10 @@ with torch.no_grad():
         XtoC_output = outputs[1:] 
         XtoY_output = outputs[0:1]
 
-            predictions = np.append(predictions, XtoY_output[0].squeeze().cpu().numpy())
-    true_labels = np.append(true_labels, data.y.squeeze().cpu().numpy())
+        predictions = np.append(predictions, XtoY_output[0].squeeze().cpu().numpy())
+        true_labels = np.append(true_labels, data.y.squeeze().cpu().numpy())
 
 print(f'Test roc_auc_score = {roc_auc_score(true_labels, predictions)}')
 
-with open(f'explanations_dir/test_loader_gnn_{data_type}.pkl', 'wb') as f:
+with open(f'model_output_dir/test_loader_gnn_{data_type}.pkl', 'wb') as f:
     pkl.dump(test_loader, f)
