@@ -3,6 +3,12 @@
 This repository contains the implementation of the paper "GlassMol: Interpretable Molecular Property Prediction with Concept Bottleneck Models". The goal of this work is to develop and demonstrate the efficacy of a concept bottleneck architecture for a variety of chemical tasks, using the embeddings from both LLM and GNN architectures.
 
 ### Setup
+Install dependencies:
+```python
+pip install -r requirements.txt
+
+```
+
 To generate the augmented dataset as used in the paper:
 ```python
 python data/get_data.py <dataset>
