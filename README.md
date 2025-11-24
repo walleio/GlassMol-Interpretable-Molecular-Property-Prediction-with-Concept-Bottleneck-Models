@@ -36,7 +36,7 @@ After training the LLM model, generate explanations using the concepts selected 
 
 
 ```python
-python generate_explanations/explainer_step1_llm.py <dataset>
+python -m generate_explanations.explainer_step1_llm <dataset>
 
 ```
 
@@ -44,14 +44,14 @@ After training the GNN model, generate explanations using the concepts selected 
 
 
 ```python
-python generate_explanations/explainer_step1_gnn.py <dataset>
+python -m generate_explanations.explainer_step1_gnn <dataset>
 
 ```
 - In both cases, --dataset is the dataset used during training (set in the args.yaml).
 
 Finally, to see textual output:
 ```python
-python generate_explanations/explainer_step2.py <model> <dataset> <mol_to_analyze>
+python -m generate_explanations.explainer_step2 <model> <dataset> <mol_to_analyze>
 
 ```
 - --model is whichever model has been trained (either 'gnn' or 'llm').
