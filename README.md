@@ -44,14 +44,14 @@ After training the GNN model, generate explanations using the concepts selected 
 
 
 ```python
-python <explainer_step1_gnn.py> <dataset>
+python generate_explanations/explainer_step1_gnn.py <dataset>
 
 ```
 - In both cases, --dataset is the dataset used during training (set in the args.yaml).
 
 Finally, to see textual output:
 ```python
-python <explainer_step2.py> <model> <dataset> <mol_to_analyze>
+python generate_explanations/explainer_step2.py <model> <dataset> <mol_to_analyze>
 
 ```
 - --model is whichever model has been trained (either 'gnn' or 'llm').
